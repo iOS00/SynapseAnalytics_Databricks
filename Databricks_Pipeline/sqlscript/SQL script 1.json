@@ -1,0 +1,17 @@
+{
+	"name": "SQL script 1",
+	"properties": {
+		"content": {
+			"query": "SELECT TOP (100) [BranchID]\n,[BranchLocation]\n,[BranchName]\n,[DateCreated]\n FROM [dbo].[branch]",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "GlobomanticsDWH",
+				"poolName": "GlobomanticsDWH"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

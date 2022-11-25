@@ -1,0 +1,30 @@
+{
+	"name": "PL_DIMENSIONS_PROCESSING",
+	"properties": {
+		"activities": [
+			{
+				"name": "PROCESS_DIMENSIONS",
+				"type": "DatabricksNotebook",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"notebookPath": "/Users/livelab1111@outlook.com/Process Dimension Tables"
+				},
+				"linkedServiceName": {
+					"referenceName": "LS_psadbw",
+					"type": "LinkedServiceReference"
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2022-11-25T19:32:58Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

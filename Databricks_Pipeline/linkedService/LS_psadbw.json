@@ -1,0 +1,24 @@
+{
+	"name": "LS_psadbw",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureDatabricks",
+		"typeProperties": {
+			"domain": "https://adb-5785158157047950.10.azuredatabricks.net",
+			"accessToken": {
+				"type": "AzureKeyVaultSecret",
+				"store": {
+					"referenceName": "LS_pskv",
+					"type": "LinkedServiceReference"
+				},
+				"secretName": "Databricks-Azure-Synapse-Linked-Token4"
+			},
+			"existingClusterId": "1125-170530-uhwwrfwn"
+		},
+		"connectVia": {
+			"referenceName": "AutoResolveIntegrationRuntime",
+			"type": "IntegrationRuntimeReference"
+		}
+	}
+}

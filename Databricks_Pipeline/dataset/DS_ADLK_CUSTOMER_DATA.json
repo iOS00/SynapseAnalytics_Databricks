@@ -1,0 +1,44 @@
+{
+	"name": "DS_ADLK_CUSTOMER_DATA",
+	"properties": {
+		"linkedServiceName": {
+			"referenceName": "psasaw2-WorkspaceDefaultStorage",
+			"type": "LinkedServiceReference"
+		},
+		"parameters": {
+			"CONTAINER": {
+				"type": "string",
+				"defaultValue": "rawdatastore"
+			},
+			"DIR_NAME": {
+				"type": "string",
+				"defaultValue": "data/customer/2021/01"
+			},
+			"FILE_NAME": {
+				"type": "string",
+				"defaultValue": "customers_2021-01-01"
+			}
+		},
+		"annotations": [],
+		"type": "Json",
+		"typeProperties": {
+			"location": {
+				"type": "AzureBlobFSLocation",
+				"fileName": {
+					"value": "@concat(dataset().FILE_NAME,'.json')",
+					"type": "Expression"
+				},
+				"folderPath": {
+					"value": "@dataset().DIR_NAME",
+					"type": "Expression"
+				},
+				"fileSystem": {
+					"value": "@dataset().CONTAINER",
+					"type": "Expression"
+				}
+			}
+		},
+		"schema": {}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

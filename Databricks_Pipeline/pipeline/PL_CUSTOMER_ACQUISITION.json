@@ -1,0 +1,285 @@
+{
+	"name": "PL_CUSTOMER_ACQUISITION",
+	"properties": {
+		"activities": [
+			{
+				"name": "GET_DATE_LIST",
+				"type": "Lookup",
+				"dependsOn": [],
+				"policy": {
+					"timeout": "0.12:00:00",
+					"retry": 0,
+					"retryIntervalInSeconds": 30,
+					"secureOutput": false,
+					"secureInput": false
+				},
+				"userProperties": [],
+				"typeProperties": {
+					"source": {
+						"type": "SqlPoolSource",
+						"sqlReaderQuery": "DECLARE @StartDate DATE = (\n\t\tSELECT dateadd(day, - 1, CONVERT(VARCHAR(10), [process_date_hour], 126)) [LAST_UPDATE]\n\t\tFROM [stage].[current_watermark]\n\t\t)\nDECLARE @EndDate DATE = (\n\t\tSELECT cast(DATEADD(day, - 1, getdate()) AS DATE) AS StartDate\n\t\t)\n\nSELECT [LAST_UPDATE]\n\t,CONCAT (\n\t\t'customers_'\n\t\t,[LAST_UPDATE]\n\t\t) AS [FILE_NAME]\n\t,CONCAT (\n\t\t'data/customer/'\n\t\t,REPLACE(CONVERT(VARCHAR(7), [LAST_UPDATE], 112), '-', '/')\n\t\t) AS [DATA_DIR]\nFROM (\n\tSELECT TOP (DATEDIFF(DAY, @StartDate, @EndDate)) [LAST_UPDATE] = convert(VARCHAR(10), cast(DATEADD(DAY, ROW_NUMBER() OVER (\n\t\t\t\t\t\tORDER BY a.object_id\n\t\t\t\t\t\t), @StartDate) AS DATE), 126)\n\tFROM sys.all_objects a\n\tCROSS JOIN sys.all_objects b\n\t) A\nORDER BY [LAST_UPDATE] ASC",
+						"queryTimeout": "02:00:00"
+					},
+					"dataset": {
+						"referenceName": "DS_ADSP_TABLES",
+						"type": "DatasetReference"
+					},
+					"firstRowOnly": false
+				}
+			},
+			{
+				"name": "FOR_EACH_DATE",
+				"type": "ForEach",
+				"dependsOn": [
+					{
+						"activity": "GET_DATE_LIST",
+						"dependencyConditions": [
+							"Succeeded"
+						]
+					}
+				],
+				"userProperties": [],
+				"typeProperties": {
+					"items": {
+						"value": "@activity('GET_DATE_LIST').output.value",
+						"type": "Expression"
+					},
+					"isSequential": true,
+					"activities": [
+						{
+							"name": "SET_DIR_NAME",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "DATA_DIR",
+								"value": {
+									"value": "@item().DATA_DIR",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "SET_FILE_NAME",
+							"type": "SetVariable",
+							"dependsOn": [],
+							"userProperties": [],
+							"typeProperties": {
+								"variableName": "FILE_NAME",
+								"value": {
+									"value": "@item().FILE_NAME",
+									"type": "Expression"
+								}
+							}
+						},
+						{
+							"name": "CP_JSON_TO_DWH",
+							"type": "Copy",
+							"dependsOn": [
+								{
+									"activity": "SET_DIR_NAME",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								},
+								{
+									"activity": "SET_FILE_NAME",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"source": {
+									"type": "JsonSource",
+									"storeSettings": {
+										"type": "AzureBlobFSReadSettings",
+										"recursive": true,
+										"enablePartitionDiscovery": false
+									},
+									"formatSettings": {
+										"type": "JsonReadSettings"
+									}
+								},
+								"sink": {
+									"type": "SqlPoolSink",
+									"preCopyScript": "TRUNCATE TABLE [stage].[customer_acquistion_data]",
+									"allowCopyCommand": true
+								},
+								"enableStaging": true,
+								"stagingSettings": {
+									"linkedServiceName": {
+										"referenceName": "LS_psbs",
+										"type": "LinkedServiceReference"
+									},
+									"path": "temp-for-sql-warehouse/tempDirs"
+								},
+								"translator": {
+									"type": "TabularTranslator",
+									"mappings": [
+										{
+											"source": {
+												"path": "$['customer_id']"
+											},
+											"sink": {
+												"name": "customer_id",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['relationship_manager_id']"
+											},
+											"sink": {
+												"name": "relationship_manager_id",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['last_updated']"
+											},
+											"sink": {
+												"name": "last_updated",
+												"type": "String"
+											}
+										},
+										{
+											"source": {
+												"path": "$['deposit_amount']"
+											},
+											"sink": {
+												"name": "deposit_amount",
+												"type": "String"
+											}
+										}
+									]
+								}
+							},
+							"inputs": [
+								{
+									"referenceName": "DS_ADLK_CUSTOMER_DATA",
+									"type": "DatasetReference",
+									"parameters": {
+										"CONTAINER": "rawdatastore",
+										"DIR_NAME": {
+											"value": "@variables('DATA_DIR')",
+											"type": "Expression"
+										},
+										"FILE_NAME": {
+											"value": "@variables('FILE_NAME')",
+											"type": "Expression"
+										}
+									}
+								}
+							],
+							"outputs": [
+								{
+									"referenceName": "DS_ADSP_TABLES",
+									"type": "DatasetReference"
+								}
+							]
+						},
+						{
+							"name": "UPSERT_CUSTOMER_DATA",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "CP_JSON_TO_DWH",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[stage].[upsert_customer_acquistion_data]"
+							},
+							"linkedServiceName": {
+								"referenceName": "psasaw2-WorkspaceDefaultSqlServer",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"DBName": "GlobomanticsDWH"
+								}
+							}
+						},
+						{
+							"name": "INCREMENT_WATERMARK",
+							"type": "SqlServerStoredProcedure",
+							"dependsOn": [
+								{
+									"activity": "UPSERT_CUSTOMER_DATA",
+									"dependencyConditions": [
+										"Succeeded"
+									]
+								}
+							],
+							"policy": {
+								"timeout": "0.12:00:00",
+								"retry": 0,
+								"retryIntervalInSeconds": 30,
+								"secureOutput": false,
+								"secureInput": false
+							},
+							"userProperties": [],
+							"typeProperties": {
+								"storedProcedureName": "[stage].[increment_watermark]"
+							},
+							"linkedServiceName": {
+								"referenceName": "psasaw2-WorkspaceDefaultSqlServer",
+								"type": "LinkedServiceReference",
+								"parameters": {
+									"DBName": "GlobomanticsDWH"
+								}
+							}
+						},
+						{
+							"name": "WAIT_AND_CONTINUE",
+							"type": "Wait",
+							"dependsOn": [
+								{
+									"activity": "CP_JSON_TO_DWH",
+									"dependencyConditions": [
+										"Failed"
+									]
+								}
+							],
+							"userProperties": [],
+							"typeProperties": {
+								"waitTimeInSeconds": 1
+							}
+						}
+					]
+				}
+			}
+		],
+		"variables": {
+			"FILE_NAME": {
+				"type": "String",
+				"defaultValue": "customers_2021-01-01"
+			},
+			"DATA_DIR": {
+				"type": "String",
+				"defaultValue": "data/customer/2021/01"
+			}
+		},
+		"annotations": [],
+		"lastPublishTime": "2022-11-25T19:32:54Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

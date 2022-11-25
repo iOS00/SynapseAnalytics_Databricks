@@ -1,0 +1,17 @@
+{
+	"name": "dbms_04",
+	"properties": {
+		"content": {
+			"query": "--\n-- View - formatted FactCustomer data\n-- The cleaned customer acquistion data view tries to cast the variable length character data in the \n-- analytics table into strongly typed fields that are compatible with the target table.\n-- Drop view\nIF EXISTS (\n\t\tSELECT *\n\t\tFROM sys.objects\n\t\tWHERE object_id = object_id(N'[analytics].[FactCustomer]')\n\t\t)\n\tDROP VIEW [analytics].[FactCustomer]\nGO\n\n-- Create view\nCREATE VIEW [analytics].[FactCustomer]\nAS\nSELECT try_cast([customer_id] AS INT) AS CustomerID\n\t,try_cast([relationship_manager_id] AS INT) AS RmID\n\t,try_cast([last_updated] AS DATE) AS LastUpdateDate\n\t,try_cast([deposit_amount] AS DECIMAL) AS AccountBalance\nFROM [active].[customer_acquistion_data]\nGO\n\n-- Drop view\nIF EXISTS (\n\t\tSELECT *\n\t\tFROM sys.objects\n\t\tWHERE object_id = OBJECT_ID(N'[analytics].[DimBranch]')\n\t\t)\n\tDROP VIEW [analytics].[DimBranch]\nGO\n\n-- Create view\nCREATE VIEW [analytics].[DimBranch]\nAS\nSELECT [BranchID]\n\t,[BranchLocation]\n\t,[BranchName]\n\t,[DateCreated]\nFROM [dbo].[branch]\nGO\n\n-- Drop view\nIF EXISTS (\n\t\tSELECT *\n\t\tFROM sys.objects\n\t\tWHERE object_id = OBJECT_ID(N'[analytics].[DimRelationsManager]')\n\t\t)\n\tDROP VIEW [analytics].[DimRelationsManager]\nGO\n\n-- Create view\nCREATE VIEW [analytics].[DimRelationsManager]\nAS\nSELECT [BranchID]\n\t,[RmFirstName]\n\t,[RmLastName]\n\t,[LastUpdateDate]\n\t,[RmID]\nFROM [dbo].[relations_manager]\nGO\n\n\n\n\n\n\n-- ######################## Run in Master database ####################\n-- ###################################################################################\n-- This  script creates user accounts and logins (DataAnalyst)\nCREATE LOGIN [DataAnalyst]\n\tWITH PASSWORD = 'Bh7pRbVp#q6fXV#';\nGO\n\nCREATE USER [DataAnalyst]\nFOR LOGIN [DataAnalyst];\nGO\n\n\n\n\n\n\n-- ######################## Run in GlobomanticsDWH database ####################\n-- ###################################################################################\n-- This script creates user accounts for the logins you created at the master database level.\nCREATE USER [DataAnalyst]\nFOR LOGIN [DataAnalyst]\nWITH DEFAULT_SCHEMA = [GlobomanticsDWH];\n\n--Grant SELECT for the DataAnalyst users on the analytics schema.\nGRANT SELECT\n\tON SCHEMA::analytics\n\tTO DataAnalyst;\n\n-- execute query as DataAnalyst\n-- this query works because access has been granted to the [analytics].[DimBranch] view\nEXECUTE AS user = 'DataAnalyst'\n\nSELECT *\nFROM [analytics].[DimBranch]\n\n-- this query fails because access has not been granted to the [dbo].[branch] table\nEXECUTE AS user = 'DataAnalyst'\n\nSELECT *\nFROM [dbo].[branch]",
+			"metadata": {
+				"language": "sql"
+			},
+			"currentConnection": {
+				"databaseName": "master",
+				"poolName": "GlobomanticsDWH"
+			},
+			"resultLimit": 5000
+		},
+		"type": "SqlQuery"
+	}
+}

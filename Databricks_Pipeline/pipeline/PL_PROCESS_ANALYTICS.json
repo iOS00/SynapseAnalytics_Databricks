@@ -1,0 +1,36 @@
+{
+	"name": "PL_PROCESS_ANALYTICS",
+	"properties": {
+		"activities": [
+			{
+				"name": "PL_CUSTOMER_ACQUISITION",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_CUSTOMER_ACQUISITION",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": false
+				}
+			},
+			{
+				"name": "PL_DIMENSIONS_PROCESSING",
+				"type": "ExecutePipeline",
+				"dependsOn": [],
+				"userProperties": [],
+				"typeProperties": {
+					"pipeline": {
+						"referenceName": "PL_DIMENSIONS_PROCESSING",
+						"type": "PipelineReference"
+					},
+					"waitOnCompletion": false
+				}
+			}
+		],
+		"annotations": [],
+		"lastPublishTime": "2022-11-25T19:45:12Z"
+	},
+	"type": "Microsoft.Synapse/workspaces/pipelines"
+}

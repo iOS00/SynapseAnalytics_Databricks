@@ -1,0 +1,34 @@
+{
+	"name": "DS_ADSP_TABLES",
+	"properties": {
+		"annotations": [],
+		"type": "SqlPoolTable",
+		"schema": [
+			{
+				"name": "customer_id",
+				"type": "varchar"
+			},
+			{
+				"name": "relationship_manager_id",
+				"type": "varchar"
+			},
+			{
+				"name": "last_updated",
+				"type": "varchar"
+			},
+			{
+				"name": "deposit_amount",
+				"type": "varchar"
+			}
+		],
+		"typeProperties": {
+			"schema": "stage",
+			"table": "customer_acquistion_data"
+		},
+		"sqlPool": {
+			"referenceName": "GlobomanticsDWH",
+			"type": "SqlPoolReference"
+		}
+	},
+	"type": "Microsoft.Synapse/workspaces/datasets"
+}

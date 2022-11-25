@@ -1,0 +1,11 @@
+{
+	"name": "LS_pskv",
+	"type": "Microsoft.Synapse/workspaces/linkedservices",
+	"properties": {
+		"annotations": [],
+		"type": "AzureKeyVault",
+		"typeProperties": {
+			"baseUrl": "https://pskv-2.vault.azure.net/"
+		}
+	}
+}
